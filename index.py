@@ -1,10 +1,4 @@
-#%% Test11
-"""
-This will be another comment line 
-for the testing of the different sections
-"""
-from notebook.auth import passwd
-passwd('nysha2161')
+#%% Main
 
 import sys
 import os
@@ -14,15 +8,23 @@ import connect
 import other
 import processing
 
-# resPd = connect.start(pd, './excel/certificates.xlsx')
-resPd = connect.start2('./excel/output3.xlsx')
+#%% Parse
 
-ser = processing.version(resPd)
-ser = processing.smth(resPd, ser)
+# example of ser
+# {
+#   'Название': Column_Name_of_file,
+#   'Другое наименование': Column_AAA_of_file
+# }
+ser = {}
 
-resPd = connect.series(resPd, ser)
-print(resPd)
+# ser = connect.start(pd, './excel/certificates.xlsx')
+ser = connect.start2('./excel/output3.xlsx')
+# print(ser)
 
-connect.end(resPd, './excel/output4.xlsx')
-#%% Test12
+ser = processing.version(ser)
+ser = processing.smth(ser)
+
+#%% End
+connect.end(ser, './excel/output4.xlsx')
+
 print('Normas')

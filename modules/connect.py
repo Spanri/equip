@@ -2,6 +2,7 @@ import xlrd
 import pandas as pd
 import xlsxwriter
 
+
 def start(fileName):
     """
     Return file with column 'Name'
@@ -14,7 +15,10 @@ def start(fileName):
     for i, row in df1.iterrows():
         res.append(row.Name)
     resPd = pd.DataFrame({'Name': res})
-    return resPd
+    ser = {
+        'Название': resPd.Name,
+    }
+    return ser
 
 
 def start2(fileName):
@@ -24,25 +28,18 @@ def start2(fileName):
     file = fileName
     xl = pd.ExcelFile(file)
     resPd = xl.parse(xl.sheet_names[0])
-    return resPd
+    # print(resPd.Name)
+    ser = {
+        'Название': resPd.Name,
+    }
+    return ser
 
 
-def series(resPd, ser):
-    """
-    Do 'pd.Series' for all element of ser 
-    (add new columns to resPd)
-    """
-    for key, value in ser.items():
-        value = pd.Series(value)
-        resPd = resPd.assign(key=value.values)
-        resPd = resPd.rename(columns={'key': key})
-    return resPd
-
-
-def end(resPd, fileName):
+def end(ser, fileName):
     """
     Save resPd to fileName
     """
+    resPd = pd.DataFrame(ser)
     writer = pd.ExcelWriter(fileName)
     resPd.to_excel(writer, 'Лист1')
     writer.save()
