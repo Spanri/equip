@@ -12,7 +12,7 @@ def version(ser):
     WithoutVers = []
     for i in range(len(Name)):
         vers = re.findall(
-            r'(?=(верси.+?)(верси|cерийн|с функ|в составе|техническ|идентифи|завод|зав.|партия|по заявке|выполняю|реализу|и медиаш|$|\)|\())', str(Name[i]))
+            r'(?=(верси.+?)(верси|cерийн|с функ|в составе|техническ|идентифи|завод|зав.|партия|по заявке|выполняю|реализу|и медиаш|где|$|\)|\())', str(Name[i]))
         # print(vers)
         if(not vers):
             vers = re.findall(
@@ -57,20 +57,37 @@ def smth(ser):
     WithoutRep = []
     Partya = []
     SerNum = []
+    Where = []
     words = ''
     for i in range(len(WithoutVers)):
-        hhh = re.findall(r'(в составе согласно Приложению|в составе согласно приложению|в составе, приведенном в приложении)+$', words)
-        par = re.findall(r'партия.+$', words)
-        serNum = re.findall(r'серийные номера.+$', words)        
+        """
+        Other thing
+        """
+        words = str(WithoutVers[i])
+        hhh = re.findall(r'(в составе согласно Приложению|в составе согласно приложению|в составе, приведенном в приложении).+$', words)
+        partya0 = re.findall(r'партия.+$', words)
+        serNum = re.findall(r'серийные номера.+$', words)  
+        otherNum = re.findall(r'((заводские номера|зав.|заводской номер|идентификационные номера).+[;$)])', words)
+        par2 = re.findall(r'Партия', words)
+        where = re.findall(r'где.+[)$]', words)
+        if not where == []:
+            Where.append(where)
+        else:
+            Where.append(str(''))
+        if not par2 == []:
+            partya0 = re.findall(r'в количестве.+$', words)     
         words = re.sub(
             r'(в составе согласно Приложению|в составе согласно приложению|в составе, приведенном в приложении|серийные номера|партия).+$',
-                       '', str(WithoutVers[i]))
-        print(words)
-        if not par == []:
-            Partya.append(par)
+            '', str(WithoutVers[i]))
+        if not partya0 == []:
+            Partya.append(partya0)
+            words = re.sub(r'в количестве.+$', '', words)
         else:
             Partya.append(str(''))
+        if not otherNum == []:
+            serNum.append(otherNum[0][0])
         if not serNum == []:
+            # print(serNum)
             SerNum.append(serNum)
         else:
             SerNum.append(str(''))
@@ -78,6 +95,9 @@ def smth(ser):
             Aplic.append(True)
         else:
             Aplic.append(str(''))
+        """
+        End of other thing (Yes, i cannot put it in func)
+        """
         Iskl, AllR = comma(words)
         AllRep.append(AllR)
         if Iskl:
@@ -85,13 +105,10 @@ def smth(ser):
         else:
             Rep.append(str(''))
         WithoutRep.append(str(WithoutVers[i]))
-        # print(WithoutVers[i])
-        # print(Rep[i])
         for rep in Rep[i]:
             p = re.compile(r'(^\s|\s$)', re.M)
             rep = re.sub(p, '', str(rep))
             rep = re.sub(r'(\)\)$)', ')', str(rep))
-        # print(Rep[i])
         # for key in Rep[i]:
         #     print(str(key) + ' ' + str(WithoutRep[i]))
         #     WithoutRep[i] = re.sub(
@@ -103,15 +120,15 @@ def smth(ser):
     WithoutVers[i] = re.sub(r'(\"|\s\(|\)\s|\)$|«|»|\s-|\:|\,\s$|\s$|\.$|\,$)',
                     ' ', str(WithoutVers[i]))
     WithoutVers[i] = re.sub(r'(\)\,)', ',', str(WithoutVers[i]))
-    # print(WithoutRep[i])
     ser2 = {
-        'в составе согласно Приложению': Aplic,
-        'Партия': Partya,
-        'Серийные номера': SerNum,
+        'Без версии': WithoutVers,
         'Все повторения': AllRep,
         'Модели': Rep,
-        'Без версии': WithoutVers,
         # 'Без моделей': WithoutRep
+        'в составе согласно Приложению': Aplic,
+        'Партия': Partya,
+        'Номера': SerNum,
+        'где...': Where
     }
     ser = {**ser, **ser2}
     return ser
@@ -120,17 +137,17 @@ def smth(ser):
 def comma(words0):
     Iskl = []
     words = words0.replace(';', ',').split(', ')
-    AllRep = words.copy()
     for i, word in enumerate(words):
         if(not i == len(words)-1):
             if(abs(len(words[i]) - len(words[i+1])) > 5):
                 lenn = min(len(words[i]), len(words[i+1]))
-                words[i] = words[i][slice(-lenn, len(words[i]))]
-                words[i+1] = words[i+1][slice(-lenn, len(words[i+1]))]
+                words[i] = words[i][slice(-lenn-1, len(words[i]))]
+                words[i+1] = words[i+1][slice(-lenn-1, len(words[i+1]))]
         for word2 in words:
             fuz = fuzz.token_sort_ratio(word, word2)
             if fuz > 70 and fuz < 100:
                 Iskl.append(word)
                 Iskl.append(word2)
         Iskl = list(set(Iskl))
+    AllRep = words.copy()
     return Iskl, AllRep
