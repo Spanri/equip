@@ -3,11 +3,11 @@ import pandas as pd
 import xlsxwriter
 
 
-def start(fileName):
+def start(file_name):
     """
     Return file with column 'Name'
     """
-    file = fileName
+    file = file_name
     xl = pd.ExcelFile(file)
 
     df1 = xl.parse(xl.sheet_names[0])
@@ -21,25 +21,25 @@ def start(fileName):
     return ser
 
 
-def start2(fileName):
+def start2(file_name):
     """
     Return file
     """
-    file = fileName
+    file = file_name
     xl = pd.ExcelFile(file)
-    resPd = xl.parse(xl.sheet_names[0])
+    res_pd = xl.parse(xl.sheet_names[0])
     # print(resPd.Name)
     ser = {
-        'Название': resPd.Name,
+        'Название': res_pd.Name,
     }
     return ser
 
 
-def end(ser, fileName):
+def end(ser, file_name):
     """
     Save resPd to fileName
     """
-    resPd = pd.DataFrame(ser)
-    writer = pd.ExcelWriter(fileName)
-    resPd.to_excel(writer, 'Лист1')
+    res_pd = pd.DataFrame(ser)
+    writer = pd.ExcelWriter(file_name)
+    res_pd.to_excel(writer, 'Лист1')
     writer.save()
