@@ -7,137 +7,196 @@ def version(ser):
     Processing file and return Version, WithoutVers
     """
     Name = ser['Название']
-    # print(Name)
+    # print(Name) 2691
     Version = []
     WithoutVers = []
     for i in range(len(Name)):
         vers = re.findall(
-            r'(?=(верси.+?)(верси|cерийн|с функ|в составе|техническ|идентифи|завод|зав.|партия|по заявке|выполняю|реализу|и медиаш|где|$|\)|\())', str(Name[i]))
-        # print(vers)
-        if(not vers):
+            r'''(ПО не классифицируется по версиям|
+            ПО: не классифицируется по версиям)()''', 
+            str(Name[i]))
+        if not vers:
             vers = re.findall(
-                r'(программное обеспечение отсутствует)()', str(Name[i]))
-        Version.append(str(''))
+                r'''верси.+?(?=верси|cерийн|с функ|в составе|
+                технич|идентифи|завод|зав.|партия|по заявке|
+                выполняю|реализу|и медиаш|где|ПО "|ПО «|
+                \)|\(|$)''', str(Name[i]))
+        # print(vers)
+        if not vers:
+            vers = re.findall(
+                r'''(программное обеспечение отсутствует|
+                не классифицируется по |ПО: не классифицируется по|ПО: не классифицируется)()''', str(Name[i]))
+        if not vers:
+            vers = re.findall(r'''(ПО:.+$)()''', str(Name[i]))
         WithoutVers.append(str(Name[i]))
+        vvv = []
         if vers:
             for key2 in vers:
-                # Заносим очередную версию в Version
-                Version[i] += str(key2[0]) + ' || '
-                # Удаляем версию
-                WithoutVers[i] = re.sub(
-                    str(key2[0]), '', WithoutVers[i])
-            # Удаляем всякие штуки
-            # print(WithoutVers[i])
-            Version[i] = re.sub(
-                r'(версия\sПО\s-|версия\sПО:|версия\sПО|версии\sПО:|версии\sПО|версии|версия\sпрограммного\sобеспечения|версия)', '', Version[i])
-        # print(WithoutVers[i])
-            
+                a = str(key2)
+                WithoutVers[i] = WithoutVers[i].replace(a, '')
+                a = re.sub(
+                    r'''(версия ПО -|версия ПО:|версия ПО|версии ПО:|
+                    версии ПО|версии|ПО|версия программного обеспечения|версия)''',
+                    '', a)
+                a = re.sub(r'(^(\s)*|(\s)*$|\)(\s)*$|;(\s)*$)', '', a, re.M)
+                vvv.append(a)
+        WithoutVers[i] = re.sub(r'\(ПО \)', '', WithoutVers[i])
+        if not vvv == []:
+            Version.append(vvv)
+        else:
+            Version.append(str(''))
     ser2 = {
         'Версия': Version,
-        'Без версии': WithoutVers
+        'Без лишнего': WithoutVers
     }
     ser = {**ser, **ser2}
     return ser
-
-# ; это разные оборудования
-# разделить по ;
-# и для каждого элемента пропустить этот цикл
-# НОООО иногда бывает, что это модели разные,
-# значит попробовать после этого еще сравнить по ;
 
 
 def smth(ser):
     """
     Processing file and return Rep
     """
-    WithoutVers = ser['Без версии']
+    WithoutVers = ser['Без лишнего']
     Rep = []
     Aplic = []
     AllRep = []
-    WithoutRep = []
     Partya = []
     SerNum = []
     Where = []
+    AsA = []
+    TecCon = []
     words = ''
     for i in range(len(WithoutVers)):
+        WithoutVers[i] = re.sub(r'\(\)', '', str(WithoutVers[i]))
+        WithoutVers[i] = re.sub(r'(,(\s)*$)', '', str(WithoutVers[i]))
         """
         Other thing
         """
         words = str(WithoutVers[i])
-        hhh = re.findall(r'(в составе согласно Приложению|в составе согласно приложению|в составе, приведенном в приложении).+$', words)
-        partya0 = re.findall(r'партия.+$', words)
-        serNum = re.findall(r'серийные номера.+$', words)  
-        otherNum = re.findall(r'((заводские номера|зав.|заводской номер|идентификационные номера).+[;$)])', words)
-        par2 = re.findall(r'Партия', words)
-        where = re.findall(r'где.+[)$]', words)
-        if not where == []:
-            Where.append(where)
+        Where0, Partya0, SerNum0, Aplic0, AsA0, TecCon0, words = other(words)
+        if not Where0 == []:
+            Where += Where0
         else:
             Where.append(str(''))
-        if not par2 == []:
-            partya0 = re.findall(r'в количестве.+$', words)     
-        words = re.sub(
-            r'(в составе согласно Приложению|в составе согласно приложению|в составе, приведенном в приложении|серийные номера|партия).+$',
-            '', str(WithoutVers[i]))
-        if not partya0 == []:
-            Partya.append(partya0)
-            words = re.sub(r'в количестве.+$', '', words)
+        if not Partya0 == []:
+            Partya += Partya0
         else:
             Partya.append(str(''))
-        if not otherNum == []:
-            serNum.append(otherNum[0][0])
-        if not serNum == []:
-            # print(serNum)
-            SerNum.append(serNum)
+        if not SerNum0 == []:
+            SerNum += SerNum0
         else:
             SerNum.append(str(''))
-        if not hhh == []:
-            Aplic.append(True)
+        if not Aplic0 == []:
+            Aplic += Aplic0
         else:
             Aplic.append(str(''))
+        if not AsA0 == []:
+            AsA += AsA0
+        else:
+            AsA.append(str(''))
+        if not TecCon0 == []:
+            TecCon += TecCon0
+        else:
+            TecCon.append(str(''))
+        words = re.sub(r'(\(\)|\((\s)*$)', '', str(words))
+        words = words.replace(' ) ', ' ')
         """
-        End of other thing (Yes, i cannot put it in func)
+        End of other thing
         """
-        Iskl, AllR = comma(words)
-        AllRep.append(AllR)
-        if Iskl:
-            Rep.append(Iskl)
+        Iskl = re.findall(r'^[а-яА-Я-,\s/]+?(?=[А-Я]{3,}|:|\(|\d|[a-zA-Z]|\"|«|$)', str(words), re.M)
+        if not Iskl == []:
+            if len(Iskl[0]) == 1:
+                Rep.append(str(''))
+            else:
+                Rep.append(Iskl[0])
+                words = words.replace(Iskl[0], '')
         else:
             Rep.append(str(''))
-        WithoutRep.append(str(WithoutVers[i]))
-        for rep in Rep[i]:
-            p = re.compile(r'(^\s|\s$)', re.M)
-            rep = re.sub(p, '', str(rep))
-            rep = re.sub(r'(\)\)$)', ')', str(rep))
-        # for key in Rep[i]:
-        #     print(str(key) + ' ' + str(WithoutRep[i]))
-        #     WithoutRep[i] = re.sub(
-        #         str(key) + ',' 
-        #         or str(key) + r'$' 
-        #         or str(key) + '"'
-        #         or str(key) + r'\s$', 
-        #         '', str(WithoutRep[i]))
-    WithoutVers[i] = re.sub(r'(\"|\s\(|\)\s|\)$|«|»|\s-|\:|\,\s$|\s$|\.$|\,$)',
-                    ' ', str(WithoutVers[i]))
-    WithoutVers[i] = re.sub(r'(\)\,)', ',', str(WithoutVers[i]))
+        AllRep.append(words)
+    WithoutVers[i] = re.sub(
+        r'(\"|\s\(|\)\s|\)$|«|»|\s-|\:|\,\s$|\s$|\.$|\,$|^[:\s]*)',
+        ' ', str(WithoutVers[i]), re.M)
     ser2 = {
-        'Без версии': WithoutVers,
-        'Все повторения': AllRep,
+        'Название': ser['Название'],
+        'Без лишнего': AllRep,
         'Модели': Rep,
-        # 'Без моделей': WithoutRep
+        'Версия': ser['Версия'],
         'в составе согласно Приложению': Aplic,
         'Партия': Partya,
         'Номера': SerNum,
-        'где...': Where
+        'Расшифровки': Where,
+        'В качестве': AsA,
+        'Технические условия': TecCon
     }
-    ser = {**ser, **ser2}
-    return ser
+    return ser2
+
+
+def other(words):
+    Where0 = []
+    Partya0 = []
+    SerNum0 = []
+    Aplic0 = []
+    AsA0 = []
+    TecCon0 = []
+    # в составе согласно приложению
+    hhh = re.findall(
+        r'''(в составе согласно Приложению|в составе согласно приложению|
+        в составе приведенном в приложении|в составе согласно Приложению|
+        в составе, приведенном в приложении).+?(.|,|$)''', words)
+    if not hhh == []:
+        Aplic0.append(True)
+        words = re.sub(
+            r'''(в составе согласно Приложению|в составе согласно приложению|в составе приведенном в приложении|В СОСТАВЕ пРИЛОЖЕНИЯ|в составе, приведенном в приложении)''', '', words)
+    # где...  177 857
+    where = re.findall(r'где.+?(?=\)|;|$)', words)
+    if not where == []:
+        Where0.append(where)
+        words = re.sub(r'где.+?(?=\)|;|$)', '', words)
+    # партия
+    partya0 = re.findall(r'партия.+?(?=с серийными|$)', words)
+    par2 = re.findall(r'Партия', words)
+    if not par2 == []:
+        partya0 = re.findall(r'(?=в количестве).+$', words)
+    if not partya0 == []:
+        Partya0.append(partya0)
+        words = re.sub(r'в количестве.+$', '', words)
+        words = re.sub(r'партия.+?(?=с серийными|$)', '', words)
+    # номера 5874 5875 7242 7243
+    otherNum = re.findall(
+        r'((заводские|зав.|заводской номер|идентификационн|с идентификацион).+?(?=\)|;|$))', words)
+    serNum = re.findall(r'((серийны|с серийны).+?(?=\)|;|$))', words)
+    if not serNum == []:
+        serNum = serNum[0][0]
+    repNum = []
+    repNum = re.findall(r'(серий.+?серий){1}', words)
+    if not repNum == []:
+        serNum = re.findall(r'серийны.+?(?=\,|;|\)|$)', words)
+    if not otherNum == []:
+        serNum.append(otherNum[0][0])
+        words = re.sub(
+            r'((заводские|зав.|заводской номер|идентификационн|с идентификацион).+?(?=\)|;|$))', '', words)
+    if not serNum == []:
+        SerNum0.append(serNum)
+        words = re.sub(r'((серийны|с серийны).+?(?=\)|;|$))', '', words)
+    # в качестве
+    asA = re.findall(r'в качестве.+$', words)
+    if not asA == []:
+        AsA0.append(asA)
+        words = re.sub(r'в качестве.+$', '', words)
+    # технические условия
+    tecCon = re.findall(r'технические условия.+?(?=;|$)', words)
+    if not tecCon == []:
+        TecCon0.append(tecCon)
+        words = re.sub(r'технические условия.+?(?=;|$)', '', words)
+    return Where0, Partya0, SerNum0, Aplic0, AsA0, TecCon0, words
 
 
 def comma(words0):
     Iskl = []
     words = words0.replace(';', ',').split(', ')
     for i, word in enumerate(words):
+
         if(not i == len(words)-1):
             if(abs(len(words[i]) - len(words[i+1])) > 5):
                 lenn = min(len(words[i]), len(words[i+1]))
@@ -149,5 +208,4 @@ def comma(words0):
                 Iskl.append(word)
                 Iskl.append(word2)
         Iskl = list(set(Iskl))
-    AllRep = words.copy()
-    return Iskl, AllRep
+    return Iskl
